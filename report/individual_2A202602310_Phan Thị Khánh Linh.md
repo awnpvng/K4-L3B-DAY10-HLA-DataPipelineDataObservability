@@ -6,13 +6,13 @@
 
 | Thông tin         | Nội dung                  |
 | ------------------ | -------------------------- |
-| Họ và tên       | [Họ và tên]             |
-| MSSV               | [MSSV]                     |
-| Khóa/Lớp         | [K3 hoặc K4]              |
-| Tên nhóm         | [Tên hoặc mã nhóm]     |
-| Vai trò chính    | [Vai trò]                 |
-| Repository         | [Đường dẫn repository] |
-| Ngày hoàn thành | [YYYY-MM-DD]               |
+| Họ và tên       | Phan Thị Khánh Linh       |
+| MSSV               | 2A202602310                     |
+| Khóa/Lớp         | K4-L3B              |
+| Tên nhóm         | HLA     |
+| Vai trò chính    | C — Retrieval Lead (Embedding & Vector Index)                 |
+| Repository         | https://github.com/awnpvng/K4-L3B-DAY10-HLA-DataPipelineDataObservability |
+| Ngày hoàn thành | [YYYY-MM-DD — điền ngày bạn thực sự hoàn thành]               |
 
 ## 2. Vai trò và phạm vi công việc
 
@@ -20,27 +20,25 @@
 
 | Module/deliverable | File/hàm phụ trách | Input nhận vào | Output bàn giao  | Trạng thái                                 |
 | ------------------ | --------------------- | ---------------- | ----------------- | -------------------------------------------- |
-| [Phần việc]      | [File/hàm]           | [Input]          | [Output/artifact] | [Hoàn thành/Một phần/Chưa hoàn thành] |
-| [Phần việc]      | [File/hàm]           | [Input]          | [Output/artifact] | [Hoàn thành/Một phần/Chưa hoàn thành] |
+| Embedding model | `src/retrieval/embeddings.py` | `text_for_embedding` từ clean dataframe (B) | `data/embeddings/papers_embeddings.json` (vector `all-MiniLM-L6-v2`) | Hoàn thành |
+| Vector store indexing | `src/retrieval/index.py` | Vector embeddings + metadata | ChromaDB local persist `data/chroma/`, collection `papers-baseline`/`papers-corrupted`/`papers-repaired` | Hoàn thành |
 
-Chỉ nhận ownership cho phần bạn trực tiếp thực hiện. Liên hệ rõ phần việc của bạn với đầu vào, đầu ra và các thành viên phụ thuộc vào phần đó.
+*(Ghi rõ nếu bạn còn xử lý thêm tham số retrieval, ví dụ `top_k`, similarity function.)*
 
 ### Việc hỗ trợ ngoài phạm vi chính
 
 | Hoạt động                         | Thành viên/module được hỗ trợ | Kết quả                    |
 | ------------------------------------ | ------------------------------------ | ---------------------------- |
-| [Debug/tích hợp/tài liệu] | [Tên hoặc module] | [Kết quả và bằng chứng] |
+| [Điền hoạt động hỗ trợ thực tế của bạn] | [Tên hoặc module] | [Kết quả và bằng chứng] |
 
 ## 3. Kết quả theo vai trò
 
 | Nhiệm vụ đã thực hiện | File/hàm/artifact liên quan | Kết quả bàn giao       | Cách xác minh         |
 | --------------------------- | ----------------------------- | ------------------------- | ----------------------- |
-| [Mô tả cụ thể] | [Đường dẫn file] | [Artifact/metrics/report] | [Lệnh/artifact] |
-| [Mô tả cụ thể] | [Đường dẫn file] | [Artifact/metrics/report] | [Lệnh/artifact] |
+| Sinh vector embedding cho 24 tài liệu sạch | `src/retrieval/embeddings.py` | `data/embeddings/papers_embeddings.json` (24 vector) | `python script/run_phase1.py` |
+| Khởi tạo và cô lập 3 collection ChromaDB riêng biệt (baseline/corrupted/repaired) | `src/retrieval/index.py` | `data/chroma/` (3 collection độc lập) | Lệnh nghiệm thu CP2 trong `docs/CHECKPOINTS.md` |
 
-Nêu một output cụ thể mà phần việc của bạn tạo ra hoặc giúp xác minh:
-
-[Mô tả artifact, metric, report hoặc kết quả tích hợp.]
+Output cụ thể: `data/chroma/` chứa collection `papers-baseline` với đủ 24 document đã index (đối chiếu với `retrieval_hit_rate: 1.0000` trong `data/results/baseline_metrics.json` — nếu index thiếu/sai, Hit Rate baseline sẽ không thể đạt 1.0000).
 
 ## 4. Giải thích phần kỹ thuật đã thực hiện
 
@@ -115,12 +113,14 @@ Giải thích ngắn gọn bằng lời của bạn:
 
 | Metric/signal          | Baseline | Corrupted | Repaired | Nhận xét của cá nhân |
 | ---------------------- | -------: | --------: | -------: | ------------------------- |
-| `retrieval_hit_rate` |      [ ] |       [ ] |      [ ] | [Nhận xét]              |
-| `mean_token_f1`      |      [ ] |       [ ] |      [ ] | [Nhận xét]              |
-| `judge_accuracy`     |      [ ] |       [ ] |      [ ] | [Nhận xét]              |
-| `mean_judge_score`   |      [ ] |       [ ] |      [ ] | [Nhận xét]              |
-| Quality checks         |      [ ] |       [ ] |      [ ] | [Nhận xét]              |
-| Freshness status       |      [ ] |       [ ] |      [ ] | [Nhận xét]              |
+| `retrieval_hit_rate` |      1.0000 |       0.6000 |      1.0000 | [Nhận xét của bạn — góc nhìn Retrieval Lead, vì sao index bị ảnh hưởng khi row count giảm 24→21?]              |
+| `mean_token_f1`      |      0.8759 |       0.8213 |      1.0000 | [Nhận xét]              |
+| `judge_accuracy`     |      0.9000 |       0.8000 |      1.0000 | [Nhận xét]              |
+| `mean_judge_score`   |      4.2000 |       3.8000 |      5.0000 | [Nhận xét]              |
+| Quality checks         |      PASS (7/7) |       FAIL (row count 21≠24) |      PASS (7/7) | [Nhận xét]              |
+| Freshness status       |      PASS (4.17%) |       FAIL (38.10%) |      PASS (4.17%) | [Nhận xét]              |
+
+*(Số liệu trên lấy từ `data/results/*_metrics.json` và `data/quality/*_quality_report.json` — bạn chỉ cần điền phần "Nhận xét của cá nhân" theo đúng góc nhìn Retrieval Lead của mình.)*
 
 ### Kết luận từ số liệu
 
