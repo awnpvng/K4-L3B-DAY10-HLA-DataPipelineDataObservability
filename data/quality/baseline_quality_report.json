@@ -16,23 +16,197 @@
   "expectations": [
     {
       "success": true,
-      "result": "{\n  \"success\": true,\n  \"expectation_config\": {\n    \"type\": \"expect_table_row_count_to_be_between\",\n    \"kwargs\": {\n      \"batch_id\": \"baseline_source-baseline_asset\",\n      \"min_value\": 1,\n      \"max_value\": 100000\n    },\n    \"meta\": {},\n    \"severity\": \"critical\"\n  },\n  \"result\": {\n    \"observed_value\": 24\n  },\n  \"meta\": {},\n  \"exception_info\": {\n    \"raised_exception\": false,\n    \"exception_traceback\": null,\n    \"exception_message\": null\n  }\n}"
+      "expectation_config": {
+        "type": "expect_table_row_count_to_be_between",
+        "kwargs": {
+          "batch_id": "baseline_source-baseline_asset",
+          "min_value": 24,
+          "max_value": 24
+        },
+        "meta": {},
+        "severity": "critical"
+      },
+      "result": {
+        "observed_value": 24
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
     },
     {
       "success": true,
-      "result": "{\n  \"success\": true,\n  \"expectation_config\": {\n    \"type\": \"expect_column_values_to_not_be_null\",\n    \"kwargs\": {\n      \"batch_id\": \"baseline_source-baseline_asset\",\n      \"column\": \"paper_id\"\n    },\n    \"meta\": {},\n    \"severity\": \"critical\"\n  },\n  \"result\": {\n    \"element_count\": 24,\n    \"unexpected_count\": 0,\n    \"unexpected_percent\": 0.0,\n    \"partial_unexpected_list\": [],\n    \"partial_unexpected_counts\": [],\n    \"partial_unexpected_index_list\": []\n  },\n  \"meta\": {},\n  \"exception_info\": {\n    \"raised_exception\": false,\n    \"exception_traceback\": null,\n    \"exception_message\": null\n  }\n}"
+      "expectation_config": {
+        "type": "expect_column_values_to_not_be_null",
+        "kwargs": {
+          "batch_id": "baseline_source-baseline_asset",
+          "column": "paper_id"
+        },
+        "meta": {},
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 24,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
     },
     {
       "success": true,
-      "result": "{\n  \"success\": true,\n  \"expectation_config\": {\n    \"type\": \"expect_column_values_to_be_unique\",\n    \"kwargs\": {\n      \"batch_id\": \"baseline_source-baseline_asset\",\n      \"column\": \"paper_id\"\n    },\n    \"meta\": {},\n    \"severity\": \"critical\"\n  },\n  \"result\": {\n    \"element_count\": 24,\n    \"unexpected_count\": 0,\n    \"unexpected_percent\": 0.0,\n    \"partial_unexpected_list\": [],\n    \"missing_count\": 0,\n    \"missing_percent\": 0.0,\n    \"unexpected_percent_total\": 0.0,\n    \"unexpected_percent_nonmissing\": 0.0,\n    \"partial_unexpected_counts\": [],\n    \"partial_unexpected_index_list\": []\n  },\n  \"meta\": {},\n  \"exception_info\": {\n    \"raised_exception\": false,\n    \"exception_traceback\": null,\n    \"exception_message\": null\n  }\n}"
+      "expectation_config": {
+        "type": "expect_column_values_to_be_unique",
+        "kwargs": {
+          "batch_id": "baseline_source-baseline_asset",
+          "column": "paper_id"
+        },
+        "meta": {},
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 24,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
     },
     {
       "success": true,
-      "result": "{\n  \"success\": true,\n  \"expectation_config\": {\n    \"type\": \"expect_column_values_to_not_be_null\",\n    \"kwargs\": {\n      \"batch_id\": \"baseline_source-baseline_asset\",\n      \"column\": \"title\"\n    },\n    \"meta\": {},\n    \"severity\": \"critical\"\n  },\n  \"result\": {\n    \"element_count\": 24,\n    \"unexpected_count\": 0,\n    \"unexpected_percent\": 0.0,\n    \"partial_unexpected_list\": [],\n    \"partial_unexpected_counts\": [],\n    \"partial_unexpected_index_list\": []\n  },\n  \"meta\": {},\n  \"exception_info\": {\n    \"raised_exception\": false,\n    \"exception_traceback\": null,\n    \"exception_message\": null\n  }\n}"
+      "expectation_config": {
+        "type": "expect_column_values_to_not_be_null",
+        "kwargs": {
+          "batch_id": "baseline_source-baseline_asset",
+          "column": "title"
+        },
+        "meta": {},
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 24,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
     },
     {
       "success": true,
-      "result": "{\n  \"success\": true,\n  \"expectation_config\": {\n    \"type\": \"expect_column_value_lengths_to_be_between\",\n    \"kwargs\": {\n      \"batch_id\": \"baseline_source-baseline_asset\",\n      \"column\": \"summary\",\n      \"min_value\": 1,\n      \"max_value\": 100000\n    },\n    \"meta\": {},\n    \"severity\": \"critical\"\n  },\n  \"result\": {\n    \"element_count\": 24,\n    \"unexpected_count\": 0,\n    \"unexpected_percent\": 0.0,\n    \"partial_unexpected_list\": [],\n    \"missing_count\": 0,\n    \"missing_percent\": 0.0,\n    \"unexpected_percent_total\": 0.0,\n    \"unexpected_percent_nonmissing\": 0.0,\n    \"partial_unexpected_counts\": [],\n    \"partial_unexpected_index_list\": []\n  },\n  \"meta\": {},\n  \"exception_info\": {\n    \"raised_exception\": false,\n    \"exception_traceback\": null,\n    \"exception_message\": null\n  }\n}"
+      "expectation_config": {
+        "type": "expect_column_value_lengths_to_be_between",
+        "kwargs": {
+          "batch_id": "baseline_source-baseline_asset",
+          "column": "title",
+          "min_value": 8,
+          "max_value": 500
+        },
+        "meta": {},
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 24,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": true,
+      "expectation_config": {
+        "type": "expect_column_values_to_not_be_null",
+        "kwargs": {
+          "batch_id": "baseline_source-baseline_asset",
+          "column": "summary"
+        },
+        "meta": {},
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 24,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
+    },
+    {
+      "success": true,
+      "expectation_config": {
+        "type": "expect_column_value_lengths_to_be_between",
+        "kwargs": {
+          "batch_id": "baseline_source-baseline_asset",
+          "column": "summary",
+          "min_value": 40,
+          "max_value": 10000
+        },
+        "meta": {},
+        "severity": "critical"
+      },
+      "result": {
+        "element_count": 24,
+        "unexpected_count": 0,
+        "unexpected_percent": 0.0,
+        "partial_unexpected_list": [],
+        "missing_count": 0,
+        "missing_percent": 0.0,
+        "unexpected_percent_total": 0.0,
+        "unexpected_percent_nonmissing": 0.0,
+        "partial_unexpected_counts": [],
+        "partial_unexpected_index_list": []
+      },
+      "meta": {},
+      "exception_info": {
+        "raised_exception": false,
+        "exception_traceback": null,
+        "exception_message": null
+      }
     }
   ]
 }
