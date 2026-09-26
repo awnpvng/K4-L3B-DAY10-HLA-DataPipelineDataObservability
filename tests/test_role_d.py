@@ -13,6 +13,7 @@ from evaluation.metrics import _token_f1, evaluate_pipeline
 from evaluation.testset import QUESTION_TYPE_COUNTS, build_test_set
 from ingestion.cleaning import CLEAN_COLUMNS, build_clean_dataframe
 from ingestion.crossref import load_raw_records
+from observability.reporting import generate_phase1_report
 from retrieval.agent import build_agent, run_agent_question
 from retrieval.index import SearchResult
 from retrieval.qa import _extract_answer
@@ -172,3 +173,99 @@ def test_evaluate_pipeline_writes_hit_rate_and_token_f1() -> None:
     finally:
         for path in paths:
             path.unlink(missing_ok=True)
+
+
+def test_evaluation_does_not_force_exact_title_lookup() -> None:
+    directory = Path(__file__).parent
+    test_set_path = directory / ".semantic_evaluation_input.json"
+    metrics_path = directory / ".semantic_evaluation_metrics.json"
+    answers_path = directory / ".semantic_evaluation_answers.json"
+    paths = (test_set_path, metrics_path, answers_path)
+    test_set = [
+        {
+            "id": "date-01",
+            "question_type": "date",
+            "question": "When was the paper 'Paper 1' published?",
+            "ground_truth": "2026-06-01",
+            "ground_truth_doc_ids": ["paper-01"],
+        }
+    ]
+    wrong_result = SearchResult(
+        paper_id="paper-02",
+        title="Paper 2",
+        score=0.8,
+        content="content",
+        metadata={"published": "2025-01-01"},
+    )
+
+    class StubIndex:
+        def lookup(self, value: str):
+            raise AssertionError("Evaluation must not use exact-title lookup.")
+
+        def search(self, query: str, top_k: int | None = None):
+            return [wrong_result]
+
+    try:
+        test_set_path.write_text(json.dumps(test_set), encoding="utf-8")
+        settings = replace(load_settings(), llm_provider="mock", model_name="mock")
+        bundle = evaluate_pipeline(settings, StubIndex(), test_set_path, metrics_path, answers_path)
+
+        assert bundle.summary["retrieval_hit_rate"] == 0.0
+        assert bundle.summary["mean_token_f1"] < 1.0
+    finally:
+        for path in paths:
+            path.unlink(missing_ok=True)
+
+
+def test_generate_phase1_report_uses_measured_values() -> None:
+    report_path = Path(__file__).with_name(".phase1_report.md")
+    try:
+        generate_phase1_report(
+            report_path=report_path,
+            source_summary={
+                "run_at_utc": "2026-09-26T04:00:00+00:00",
+                "source_api": "Crossref REST API",
+                "raw_records": 24,
+                "clean_records": 24,
+                "indexed_documents": 24,
+                "collection_name": "papers-baseline",
+                "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+                "evaluation_questions": 10,
+                "llm_provider": "mock",
+                "llm_model": "mock",
+            },
+            metrics={
+                "samples": 10,
+                "retrieval_hit_rate": 1.0,
+                "mean_token_f1": 0.9,
+                "judge_accuracy": 1.0,
+                "mean_judge_score": 5.0,
+                "by_question_type": {
+                    "summary": {"samples": 3, "retrieval_hit_rate": 1.0, "mean_token_f1": 0.8}
+                },
+                "ragas": {"skipped": "disabled in unit tests"},
+            },
+            quality={
+                "success": True,
+                "gx_success": True,
+                "row_count": 24,
+                "expectations": [{"success": True}],
+            },
+            freshness={
+                "is_fresh": True,
+                "latest_published": "2026-07-22",
+                "oldest_published": "2026-03-28",
+                "stale_rows": 1,
+                "total_rows": 24,
+                "stale_ratio": 1 / 24,
+                "sla_ratio": 0.25,
+                "threshold_days": 180,
+            },
+        )
+
+        report = report_path.read_text(encoding="utf-8")
+        assert "Retrieval Hit Rate | 1.0000" in report
+        assert "Mean Token F1 | 0.9000" in report
+        assert "Expectations passed: **1/1**" in report
+    finally:
+        report_path.unlink(missing_ok=True)

@@ -30,9 +30,15 @@ def _extract_answer(question: str, top_result: SearchResult) -> str:
     return first_sentence(summary) or "A summary is unavailable in the indexed corpus."
 
 
-def answer_question(question: str, settings: Settings, index: LocalEmbeddingIndex, top_k: int | None = None) -> AnswerResult:
+def answer_question(
+    question: str,
+    settings: Settings,
+    index: LocalEmbeddingIndex,
+    top_k: int | None = None,
+    use_exact_lookup: bool = True,
+) -> AnswerResult:
     title_match = re.search(r"(['\"])(.+?)\1", question)
-    exact = index.lookup(title_match.group(2)) if title_match else None
+    exact = index.lookup(title_match.group(2)) if use_exact_lookup and title_match else None
     retrieved = index.search(question, top_k=top_k)
     if exact:
         exact_result = SearchResult(

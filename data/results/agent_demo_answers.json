@@ -1,0 +1,14 @@
+[
+  {
+    "question": "Summarize the paper 'Agentic Retrieval-Augmented Generation for Knowledge-Intensive Tasks'.",
+    "answer": "Retrieval-Augmented Generation (RAG) significantly improves large language model accuracy by grounding responses in retrieved passages."
+  },
+  {
+    "question": "Summarize the paper 'Data Observability and Quality Gates for Production RAG Systems'.",
+    "answer": "Silent data corruption in RAG pipelines degrades LLM answer faithfulness without throwing runtime errors."
+  },
+  {
+    "question": "Summarize the paper 'Mitigating Ghost Vectors in Dense Retrieval via Idempotent Indexing'.",
+    "answer": "Soft-deletions in vector databases leave orphaned embeddings that lead to hallucinations."
+  }
+]
