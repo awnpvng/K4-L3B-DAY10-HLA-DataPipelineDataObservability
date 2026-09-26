@@ -21,17 +21,18 @@ def _extract_answer(question: str, top_result: SearchResult) -> str:
     lowered = question.lower()
     metadata = top_result.metadata
     if "who authored" in lowered or "list the authors" in lowered:
-        return metadata["authors_joined"]
+        return str(metadata.get("authors_joined") or "Author information is unavailable.")
     if "when was" in lowered or "publication date" in lowered or "published on" in lowered:
-        return metadata["published"]
-    if "what categories" in lowered:
-        return metadata["categories_joined"]
-    return first_sentence(metadata["summary"])
+        return str(metadata.get("published") or "Publication date is unavailable.")
+    if "what categories" in lowered or "which categories" in lowered:
+        return str(metadata.get("categories_joined") or "Category information is unavailable.")
+    summary = str(metadata.get("summary") or "")
+    return first_sentence(summary) or "A summary is unavailable in the indexed corpus."
 
 
 def answer_question(question: str, settings: Settings, index: LocalEmbeddingIndex, top_k: int | None = None) -> AnswerResult:
-    title_match = re.search(r"'([^']+)'", question)
-    exact = index.lookup(title_match.group(1)) if title_match else None
+    title_match = re.search(r"(['\"])(.+?)\1", question)
+    exact = index.lookup(title_match.group(2)) if title_match else None
     retrieved = index.search(question, top_k=top_k)
     if exact:
         exact_result = SearchResult(

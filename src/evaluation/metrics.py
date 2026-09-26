@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 from statistics import mean
 import os
+import re
 import sys
 import types
 from typing import Any
@@ -31,17 +33,17 @@ class EvaluationBundle:
 
 
 def _token_f1(reference: str, prediction: str) -> float:
-    ref_tokens = normalize_whitespace(reference).lower().split()
-    pred_tokens = normalize_whitespace(prediction).lower().split()
+    ref_tokens = re.findall(r"\w+", normalize_whitespace(reference).casefold())
+    pred_tokens = re.findall(r"\w+", normalize_whitespace(prediction).casefold())
     if not ref_tokens or not pred_tokens:
         return 0.0
-    ref_set = set(ref_tokens)
-    pred_set = set(pred_tokens)
-    overlap = len(ref_set & pred_set)
+    ref_counts = Counter(ref_tokens)
+    pred_counts = Counter(pred_tokens)
+    overlap = sum((ref_counts & pred_counts).values())
     if overlap == 0:
         return 0.0
-    precision = overlap / len(pred_set)
-    recall = overlap / len(ref_set)
+    precision = overlap / len(pred_tokens)
+    recall = overlap / len(ref_tokens)
     return 2 * precision * recall / (precision + recall)
 
 
@@ -108,12 +110,15 @@ def evaluate_pipeline(
     answers_output_path,
 ) -> EvaluationBundle:
     test_set = read_json(test_set_path)
+    if not isinstance(test_set, list) or not test_set:
+        raise ValueError("Evaluation test set must be a non-empty JSON list.")
     answers: list[dict[str, Any]] = []
 
     for item in test_set:
         result = answer_question(item["question"], settings=settings, index=index)
         judge = _judge_answer(settings, item["question"], item["ground_truth"], result.answer)
-        retrieval_hit = any(doc_id in item["ground_truth_doc_ids"] for doc_id in result.retrieved_doc_ids)
+        expected_doc_ids = {str(doc_id) for doc_id in item["ground_truth_doc_ids"]}
+        retrieval_hit = any(str(doc_id) in expected_doc_ids for doc_id in result.retrieved_doc_ids)
         answers.append(
             {
                 "id": item["id"],
@@ -136,6 +141,15 @@ def evaluate_pipeline(
         "mean_token_f1": mean(item["token_f1"] for item in answers),
         "judge_accuracy": mean(1.0 if item["judge"]["correct"] else 0.0 for item in answers),
         "mean_judge_score": mean(item["judge"]["score"] for item in answers),
+    }
+    summary["by_question_type"] = {
+        question_type: {
+            "samples": len(items),
+            "retrieval_hit_rate": mean(1.0 if item["retrieval_hit"] else 0.0 for item in items),
+            "mean_token_f1": mean(item["token_f1"] for item in items),
+        }
+        for question_type in sorted({item["question_type"] for item in answers})
+        if (items := [item for item in answers if item["question_type"] == question_type])
     }
     summary["ragas"] = _run_ragas(settings, answers)
 
