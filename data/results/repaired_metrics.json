@@ -1,9 +1,9 @@
 {
   "samples": 10,
   "retrieval_hit_rate": 1.0,
-  "mean_token_f1": 0.8758620689655172,
-  "judge_accuracy": 0.9,
-  "mean_judge_score": 4.2,
+  "mean_token_f1": 1.0,
+  "judge_accuracy": 1.0,
+  "mean_judge_score": 5,
   "by_question_type": {
     "authors": {
       "samples": 3,
@@ -18,12 +18,12 @@
     "date": {
       "samples": 2,
       "retrieval_hit_rate": 1.0,
-      "mean_token_f1": 0.5
+      "mean_token_f1": 1.0
     },
     "summary": {
       "samples": 3,
       "retrieval_hit_rate": 1.0,
-      "mean_token_f1": 0.9195402298850575
+      "mean_token_f1": 1.0
     }
   },
   "ragas": {

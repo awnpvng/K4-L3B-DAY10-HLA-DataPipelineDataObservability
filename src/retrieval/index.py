@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import Any
 
 import chromadb
@@ -247,3 +248,46 @@ class LocalEmbeddingIndex:
         if needle in self.documents_by_title:
             return self.documents_by_title[needle]
         return None
+
+
+class TitleRerankedIndex:
+    """Rerank semantic candidates with lexical title relevance.
+
+    The wrapper never searches the full corpus by exact title. It only reorders
+    candidates already returned by vector search, so evaluation still measures
+    semantic retrieval while making the final top-1 selection more precise.
+    """
+
+    def __init__(self, base_index: LocalEmbeddingIndex):
+        self.base_index = base_index
+
+    @staticmethod
+    def _tokens(value: str) -> set[str]:
+        return set(re.findall(r"\w+", value.casefold()))
+
+    @classmethod
+    def _title_relevance(cls, query: str, title: str) -> float:
+        quoted_match = re.search(r"(['\"])(.+?)\1", query)
+        quoted_title = quoted_match.group(2) if quoted_match else ""
+        title_tokens = cls._tokens(title)
+        target_tokens = cls._tokens(quoted_title or query)
+        if not title_tokens or not target_tokens:
+            return 0.0
+
+        overlap = len(title_tokens & target_tokens) / len(title_tokens | target_tokens)
+        if quoted_title and " ".join(quoted_title.casefold().split()) == " ".join(
+            title.casefold().split()
+        ):
+            return 2.0
+        return overlap
+
+    def search(self, query: str, top_k: int | None = None) -> list[SearchResult]:
+        candidates = self.base_index.search(query, top_k=top_k)
+        return sorted(
+            candidates,
+            key=lambda item: (self._title_relevance(query, item.title), item.score),
+            reverse=True,
+        )
+
+    def lookup(self, value: str) -> dict[str, Any] | None:
+        return self.base_index.lookup(value)

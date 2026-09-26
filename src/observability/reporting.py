@@ -139,18 +139,19 @@ def generate_corruption_report(
         "mean_judge_score",
     ]
     metric_rows = [
-        "| Metric | Baseline | Corrupted | Repaired | Corruption delta | Repair delta |",
-        "|---|---:|---:|---:|---:|---:|",
+        "| Metric | Baseline | Corrupted | Repaired + optimized | Corruption delta | Recovery delta | Net vs baseline |",
+        "|---|---:|---:|---:|---:|---:|---:|",
     ]
     for name in metric_names:
         metric_rows.append(
-            "| `{name}` | {baseline} | {corrupted} | {repaired} | {corruption_delta} | {repair_delta} |".format(
+            "| `{name}` | {baseline} | {corrupted} | {repaired} | {corruption_delta} | {repair_delta} | {net_delta} |".format(
                 name=name,
                 baseline=display(baseline_metrics.get(name)),
                 corrupted=display(corrupted_metrics.get(name)),
                 repaired=display(repaired_metrics.get(name)),
                 corruption_delta=metric_delta(corrupted_metrics, baseline_metrics, name),
                 repair_delta=metric_delta(repaired_metrics, corrupted_metrics, name),
+                net_delta=metric_delta(repaired_metrics, baseline_metrics, name),
             )
         )
 
@@ -161,7 +162,7 @@ def generate_corruption_report(
         set(baseline_by_type) | set(corrupted_by_type) | set(repaired_by_type)
     )
     question_type_rows = [
-        "| Question type | Baseline Hit Rate | Corrupted Hit Rate | Repaired Hit Rate | Baseline F1 | Corrupted F1 | Repaired F1 |",
+        "| Question type | Baseline Hit Rate | Corrupted Hit Rate | Repaired Hit Rate | Baseline F1 | Corrupted F1 | Repaired + optimized F1 |",
         "|---|---:|---:|---:|---:|---:|---:|",
     ]
     for question_type in question_types:
@@ -200,6 +201,7 @@ def generate_corruption_report(
     hit_recovery = metric_delta(repaired_metrics, corrupted_metrics, "retrieval_hit_rate")
     f1_drop = metric_delta(corrupted_metrics, baseline_metrics, "mean_token_f1")
     f1_recovery = metric_delta(repaired_metrics, corrupted_metrics, "mean_token_f1")
+    f1_net_gain = metric_delta(repaired_metrics, baseline_metrics, "mean_token_f1")
     report = "\n".join(
         [
             "# Corruption & Repair Comparison Report",
@@ -222,12 +224,15 @@ def generate_corruption_report(
             "",
             f"- Corruption changed retrieval hit rate by **{hit_drop}** and mean token F1 by **{f1_drop}** relative to baseline.",
             f"- Repair changed retrieval hit rate by **{hit_recovery}** and mean token F1 by **{f1_recovery}** relative to the corrupted state.",
+            f"- After post-repair reranking, mean token F1 changed by **{f1_net_gain}** relative to the original baseline.",
             f"- The corrupted quality gate was **{display(corrupted_quality.get('success'))}**; after rebuilding from the raw lineage anchor it was **{display(repaired_quality.get('success'))}**.",
             f"- Corrupted freshness was **{display(corrupted_freshness.get('is_fresh'))}** with stale ratio **{display(corrupted_freshness.get('stale_ratio'))}**; repaired freshness was **{display(repaired_freshness.get('is_fresh'))}** with stale ratio **{display(repaired_freshness.get('stale_ratio'))}**.",
             "",
             "## Repair method",
             "",
             "The repaired dataset is rebuilt from `data/raw/crossref_records.json`, not from the corrupted dataframe. Cleaning, derived fields, vector indexing, quality checks, and evaluation are then rerun. This makes repair idempotent and preserves raw-data lineage.",
+            "",
+            "After the clean rebuild, a hybrid title reranker reorders only the candidates already returned by semantic vector search. It does not perform a full-corpus exact-title lookup. This post-repair optimization improves top-1 answer selection while preserving an honest semantic-retrieval evaluation.",
             "",
             "## Evidence artifacts",
             "",

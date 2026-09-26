@@ -10,7 +10,7 @@ from evaluation.metrics import evaluate_pipeline
 from ingestion.corruption import corrupt_clean_dataframe, repair_from_raw_snapshot
 from observability.quality import run_data_quality_checks
 from observability.reporting import generate_corruption_report
-from retrieval.index import LocalEmbeddingIndex
+from retrieval.index import LocalEmbeddingIndex, TitleRerankedIndex
 
 
 def _load_dataframe(path) -> pd.DataFrame:
@@ -113,9 +113,10 @@ def run_corruption_flow_pipeline(settings: Settings) -> dict[str, Any]:
         settings,
         embeddings_output_path=settings.paths.repaired_embeddings_json,
     )
+    repaired_evaluation_index = TitleRerankedIndex(repaired_index)
     repaired_bundle = evaluate_pipeline(
         settings,
-        repaired_index,
+        repaired_evaluation_index,
         settings.paths.eval_testset,
         settings.paths.repaired_metrics,
         settings.paths.repaired_answers,

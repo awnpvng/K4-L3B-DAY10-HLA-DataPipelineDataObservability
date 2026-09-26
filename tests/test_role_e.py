@@ -12,6 +12,7 @@ from ingestion.corruption import NOISE_TEXT, corrupt_clean_dataframe, repair_fro
 from ingestion.crossref import load_raw_records
 from observability.reporting import generate_corruption_report
 from pipelines.corruption_flow import _infer_baseline_run_date
+from retrieval.index import SearchResult, TitleRerankedIndex
 
 
 def _clean_dataframe(rows: int = 24) -> pd.DataFrame:
@@ -124,6 +125,36 @@ def test_infer_baseline_run_date_reconstructs_original_day() -> None:
     assert _infer_baseline_run_date(clean_df) == expected
 
 
+def test_title_reranker_promotes_the_best_semantic_candidate_without_lookup() -> None:
+    wrong = SearchResult(
+        paper_id="paper-02",
+        title="A Different Paper",
+        score=0.95,
+        content="wrong",
+        metadata={},
+    )
+    expected = SearchResult(
+        paper_id="paper-01",
+        title="Target Paper",
+        score=0.80,
+        content="expected",
+        metadata={},
+    )
+
+    class StubIndex:
+        def search(self, query: str, top_k: int | None = None):
+            return [wrong, expected]
+
+        def lookup(self, value: str):
+            raise AssertionError("Reranking must not use full-corpus exact lookup.")
+
+    reranked = TitleRerankedIndex(StubIndex()).search(
+        "When was the paper 'Target Paper' published?"
+    )
+
+    assert [item.paper_id for item in reranked] == ["paper-01", "paper-02"]
+
+
 def test_corruption_report_uses_measured_metrics(tmp_path) -> None:
     report_path = tmp_path / "corruption_report.md"
     baseline = {
@@ -150,7 +181,16 @@ def test_corruption_report_uses_measured_metrics(tmp_path) -> None:
             }
         },
     }
-    repaired = baseline.copy()
+    repaired = {
+        **baseline,
+        "mean_token_f1": 1.0,
+        "by_question_type": {
+            "summary": {
+                "retrieval_hit_rate": 1.0,
+                "mean_token_f1": 1.0,
+            }
+        },
+    }
     quality_fail = {"success": False, "gx_success": False, "row_count": 21}
     quality_pass = {"success": True, "gx_success": True, "row_count": 24}
     stale = {"is_fresh": False, "stale_ratio": 0.30}
@@ -175,4 +215,5 @@ def test_corruption_report_uses_measured_metrics(tmp_path) -> None:
     assert "| `retrieval_hit_rate` | 1.0000 | 0.6000 | 1.0000" in report
     assert "| `summary` | 1.0000 | 0.5000 | 1.0000" in report
     assert "Corruption changed retrieval hit rate by **-0.4000**" in report
+    assert "mean token F1 changed by **+0.1000** relative to the original baseline" in report
     assert "| Quality gate | PASS | FAIL | PASS |" in report
