@@ -115,7 +115,12 @@ def evaluate_pipeline(
     answers: list[dict[str, Any]] = []
 
     for item in test_set:
-        result = answer_question(item["question"], settings=settings, index=index)
+        result = answer_question(
+            item["question"],
+            settings=settings,
+            index=index,
+            use_exact_lookup=False,
+        )
         judge = _judge_answer(settings, item["question"], item["ground_truth"], result.answer)
         expected_doc_ids = {str(doc_id) for doc_id in item["ground_truth_doc_ids"]}
         retrieval_hit = any(str(doc_id) in expected_doc_ids for doc_id in result.retrieved_doc_ids)
