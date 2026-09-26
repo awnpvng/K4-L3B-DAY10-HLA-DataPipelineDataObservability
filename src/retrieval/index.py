@@ -5,11 +5,25 @@ from pathlib import Path
 from typing import Any
 
 import chromadb
+from chromadb.errors import NotFoundError
 import pandas as pd
 
 from core.config import Settings
 from core.utils import read_json, safe_slug, write_json
 from retrieval.embeddings import MiniLMEmbeddings
+
+
+REQUIRED_INDEX_COLUMNS = {
+    "paper_id",
+    "title",
+    "text_for_embedding",
+    "published",
+    "authors_joined",
+    "categories_joined",
+    "summary",
+    "abs_url",
+    "pdf_url",
+}
 
 
 @dataclass(frozen=True)
@@ -42,28 +56,56 @@ class LocalEmbeddingIndex:
 
     @staticmethod
     def _build_documents(df: pd.DataFrame) -> list[dict[str, Any]]:
+        missing_columns = sorted(REQUIRED_INDEX_COLUMNS.difference(df.columns))
+        if missing_columns:
+            raise ValueError(f"Dataframe is missing required index columns: {missing_columns}")
+        if df.empty:
+            raise ValueError("Cannot build a vector index from an empty dataframe.")
+
         records = df.to_dict(orient="records")
         documents: list[dict[str, Any]] = []
         for index, row in enumerate(records):
+            paper_id = str(row["paper_id"]).strip()
+            title = str(row["title"]).strip()
+            content = str(row["text_for_embedding"]).strip()
+            if not paper_id or not title or not content:
+                raise ValueError(
+                    f"Row {index} must have non-empty paper_id, title, and text_for_embedding."
+                )
             documents.append(
                 {
-                    "record_id": f"{row['paper_id']}::{index}",
-                    "paper_id": row["paper_id"],
-                    "title": row["title"],
-                    "content": row["text_for_embedding"],
+                    "record_id": f"{paper_id}::{index}",
+                    "paper_id": paper_id,
+                    "title": title,
+                    "content": content,
                     "metadata": {
-                        "paper_id": row["paper_id"],
-                        "title": row["title"],
-                        "published": row["published"],
-                        "authors_joined": row["authors_joined"],
-                        "categories_joined": row["categories_joined"],
-                        "summary": row["summary"],
-                        "abs_url": row["abs_url"],
-                        "pdf_url": row["pdf_url"],
+                        "paper_id": paper_id,
+                        "title": title,
+                        "published": str(row["published"]),
+                        "authors_joined": str(row["authors_joined"]),
+                        "categories_joined": str(row["categories_joined"]),
+                        "summary": str(row["summary"]),
+                        "abs_url": str(row["abs_url"]),
+                        "pdf_url": str(row["pdf_url"]),
                     },
                 }
             )
         return documents
+
+    @staticmethod
+    def _portable_persist_path(settings: Settings, persist_path: Path) -> str:
+        resolved_path = persist_path.resolve()
+        try:
+            return resolved_path.relative_to(settings.paths.project_dir.resolve()).as_posix()
+        except ValueError:
+            return str(resolved_path)
+
+    @staticmethod
+    def _resolve_persist_path(settings: Settings, stored_path: str) -> Path:
+        persist_path = Path(stored_path)
+        if not persist_path.is_absolute():
+            persist_path = settings.paths.project_dir / persist_path
+        return persist_path.resolve()
 
     @staticmethod
     def _derive_collection_name(settings: Settings, embeddings_output_path: Path | None) -> str:
@@ -96,19 +138,25 @@ class LocalEmbeddingIndex:
         client = chromadb.PersistentClient(path=str(persist_path))
         try:
             client.delete_collection(name=collection_name)
-        except Exception:
+        except NotFoundError:
             pass
         collection = client.create_collection(
             name=collection_name,
             configuration={"hnsw": {"space": "cosine"}},
         )
         embeddings = embedding_model.embed_documents([document["content"] for document in documents])
+        if len(embeddings) != len(documents):
+            raise RuntimeError("Embedding count does not match document count.")
+        if any(len(embedding) != embedding_model.dimension for embedding in embeddings):
+            raise RuntimeError("Embedding vectors have an unexpected dimension.")
         collection.add(
             ids=[document["record_id"] for document in documents],
             embeddings=embeddings,
             documents=[document["content"] for document in documents],
             metadatas=[document["metadata"] for document in documents],
         )
+        if collection.count() != len(documents):
+            raise RuntimeError("Persisted Chroma document count does not match the input dataframe.")
 
         manifest_path = embeddings_output_path or settings.paths.embeddings_json
         write_json(
@@ -116,8 +164,10 @@ class LocalEmbeddingIndex:
             {
                 "backend": "chroma",
                 "embedding_model": settings.embedding_model,
-                "persist_path": str(persist_path),
+                "embedding_dimension": embedding_model.dimension,
+                "persist_path": cls._portable_persist_path(settings, persist_path),
                 "collection_name": collection_name,
+                "document_count": len(documents),
                 "documents": documents,
             },
         )
@@ -131,18 +181,40 @@ class LocalEmbeddingIndex:
     @classmethod
     def load(cls, settings: Settings, embeddings_path: Path | None = None) -> "LocalEmbeddingIndex":
         payload = read_json(embeddings_path or settings.paths.embeddings_json)
-        return cls(
+        if payload.get("backend") != "chroma":
+            raise ValueError("Embedding manifest backend must be 'chroma'.")
+        if payload.get("embedding_model") != settings.embedding_model:
+            raise ValueError("Embedding manifest model does not match the configured model.")
+
+        documents = payload.get("documents") or []
+        expected_count = int(payload.get("document_count", len(documents)))
+        if expected_count != len(documents):
+            raise ValueError("Embedding manifest document_count is inconsistent.")
+
+        index = cls(
             settings=settings,
             collection_name=payload["collection_name"],
-            documents=payload["documents"],
-            persist_path=Path(payload["persist_path"]),
+            documents=documents,
+            persist_path=cls._resolve_persist_path(settings, payload["persist_path"]),
         )
+        if index.collection.count() != expected_count:
+            raise RuntimeError("Chroma collection count does not match the embedding manifest.")
+        return index
 
     def search(self, query: str, top_k: int | None = None) -> list[SearchResult]:
+        if not isinstance(query, str) or not query.strip():
+            raise ValueError("Search query must be a non-empty string.")
+        requested_results = top_k if top_k is not None else self.settings.top_k
+        if requested_results <= 0:
+            raise ValueError("top_k must be greater than zero.")
+        collection_count = self.collection.count()
+        if collection_count == 0:
+            return []
+
         query_embedding = self.embedding_model.embed_query(query)
         results = self.collection.query(
             query_embeddings=[query_embedding],
-            n_results=top_k or self.settings.top_k,
+            n_results=min(requested_results, collection_count),
             include=["documents", "metadatas", "distances"],
         )
         ids = results.get("ids", [[]])[0]
@@ -158,7 +230,10 @@ class LocalEmbeddingIndex:
                 SearchResult(
                     paper_id=str(metadata["paper_id"]),
                     title=str(metadata["title"]),
-                    score=max(0.0, 1.0 - float(distance or 0.0)),
+                    score=max(
+                        0.0,
+                        min(1.0, 1.0 - float(distance) if distance is not None else 0.0),
+                    ),
                     content=str(content),
                     metadata=dict(metadata),
                 )
