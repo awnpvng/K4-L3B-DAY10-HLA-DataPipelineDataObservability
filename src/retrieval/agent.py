@@ -3,14 +3,42 @@ from __future__ import annotations
 from typing import Any
 
 from langchain.agents import create_agent
+from langchain_core.messages import AIMessage
 from langchain.tools import tool
 
-from core.config import Settings
+from core.config import Settings, normalized_provider
 from retrieval.index import LocalEmbeddingIndex
 from retrieval.llm import build_llm
+from retrieval.qa import answer_question
+
+
+class MockCorpusAgent:
+    """Offline agent with the same invoke contract as a LangChain agent."""
+
+    def __init__(self, settings: Settings, index: LocalEmbeddingIndex):
+        self.settings = settings
+        self.index = index
+
+    def invoke(self, payload: dict[str, Any]) -> dict[str, Any]:
+        messages = list(payload.get("messages", []))
+        if not messages:
+            raise ValueError("Agent input must contain at least one message.")
+        last_message = messages[-1]
+        question = (
+            last_message.get("content", "")
+            if isinstance(last_message, dict)
+            else getattr(last_message, "content", "")
+        )
+        if not isinstance(question, str) or not question.strip():
+            raise ValueError("Agent question must be a non-empty string.")
+        result = answer_question(question, settings=self.settings, index=self.index)
+        return {"messages": [*messages, AIMessage(content=result.answer)]}
 
 
 def build_agent(settings: Settings, index: LocalEmbeddingIndex):
+    if normalized_provider(settings) == "mock":
+        return MockCorpusAgent(settings=settings, index=index)
+
     @tool
     def semantic_search_papers(query: str, top_k: int = 4) -> str:
         """Search the local paper corpus with embeddings and return the most relevant papers."""
@@ -56,4 +84,16 @@ def run_agent_question(agent: Any, question: str) -> str:
     if not messages:
         return ""
     final_message = messages[-1]
-    return getattr(final_message, "content", str(final_message))
+    content = (
+        final_message.get("content", "")
+        if isinstance(final_message, dict)
+        else getattr(final_message, "content", final_message)
+    )
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        return "\n".join(
+            str(block.get("text", "")) if isinstance(block, dict) else str(block)
+            for block in content
+        ).strip()
+    return str(content)
