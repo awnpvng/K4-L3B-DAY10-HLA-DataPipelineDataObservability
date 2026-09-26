@@ -1,0 +1,199 @@
+{
+  "version": 1,
+  "deterministic": true,
+  "input_rows": 24,
+  "output_rows": 21,
+  "scenario_count": 6,
+  "scenarios": [
+    {
+      "scenario": "drop_latest_records",
+      "affected_count": 5,
+      "paper_ids": [
+        "10.1145/3637528.3671812",
+        "10.1145/3637528.3671808",
+        "10.1145/3637528.3671804",
+        "10.1145/3637528.3671807",
+        "10.1145/3637528.3671802"
+      ],
+      "changes": [
+        {
+          "paper_id": "10.1145/3637528.3671812",
+          "before": {
+            "published": "2026-07-22"
+          },
+          "after": null
+        },
+        {
+          "paper_id": "10.1145/3637528.3671808",
+          "before": {
+            "published": "2026-07-19"
+          },
+          "after": null
+        },
+        {
+          "paper_id": "10.1145/3637528.3671804",
+          "before": {
+            "published": "2026-07-05"
+          },
+          "after": null
+        },
+        {
+          "paper_id": "10.1145/3637528.3671807",
+          "before": {
+            "published": "2026-06-25"
+          },
+          "after": null
+        },
+        {
+          "paper_id": "10.1145/3637528.3671802",
+          "before": {
+            "published": "2026-06-12"
+          },
+          "after": null
+        }
+      ],
+      "details": {
+        "fraction": 0.2
+      }
+    },
+    {
+      "scenario": "blank_summary",
+      "affected_count": 2,
+      "paper_ids": [
+        "10.1145/3637528.3671824",
+        "10.1145/3637528.3671823"
+      ],
+      "changes": [
+        {
+          "paper_id": "10.1145/3637528.3671824",
+          "before": "An extended empirical study on tatic benchmarks fail to capture domain drift in enterprise knowledge bases. We establish a synthetic test generator that auto-creates paired evaluation sets whenever new corpora are ingested Further analysis on scaling parameters.",
+          "after": ""
+        },
+        {
+          "paper_id": "10.1145/3637528.3671823",
+          "before": "An extended empirical study on ense vector search excels at conceptual similarity but struggles with exact acronyms and serial numbers. Reciprocal Rank Fusion of sparse lexical scores and dense embeddings achieves optimal recall Further analysis on scaling parameters.",
+          "after": ""
+        }
+      ],
+      "details": {
+        "replacement": ""
+      }
+    },
+    {
+      "scenario": "inject_noise",
+      "affected_count": 2,
+      "paper_ids": [
+        "10.1145/3637528.3671822",
+        "10.1145/3637528.3671821"
+      ],
+      "changes": [
+        {
+          "paper_id": "10.1145/3637528.3671822",
+          "before": "An extended empirical study on mbedding quality checks directly into data pipelines enables fail-closed governance. We show how Great Expectations suites catch schema drifts and null fields before documents reach the embedding model Further analysis on scaling parameters.",
+          "after": "@@@### CORRUPTED_PAYLOAD xqzv_9999 !!! ??? An extended empirical study on mbedding quality checks directly into data pipelines enables fail-closed governance. We show how Great Expectations suites catch schema drifts and null fields before documents reach the embedding model Further analysis on scaling parameters."
+        },
+        {
+          "paper_id": "10.1145/3637528.3671821",
+          "before": "An extended empirical study on ierarchical and semantic boundary chunking preserves code block contexts and markdown headings. Our benchmark demonstrates superior top-1 recall compared to fixed character length sliding windows Further analysis on scaling parameters.",
+          "after": "@@@### CORRUPTED_PAYLOAD xqzv_9999 !!! ??? An extended empirical study on ierarchical and semantic boundary chunking preserves code block contexts and markdown headings. Our benchmark demonstrates superior top-1 recall compared to fixed character length sliding windows Further analysis on scaling parameters."
+        }
+      ],
+      "details": {
+        "noise": "@@@### CORRUPTED_PAYLOAD xqzv_9999 !!! ???"
+      }
+    },
+    {
+      "scenario": "truncate_title",
+      "affected_count": 2,
+      "paper_ids": [
+        "10.1145/3637528.3671810",
+        "10.1145/3637528.3671820"
+      ],
+      "changes": [
+        {
+          "paper_id": "10.1145/3637528.3671810",
+          "before": "Automated Data Quality Profiling with Great Expectations in CI/CD",
+          "after": "Automat"
+        },
+        {
+          "paper_id": "10.1145/3637528.3671820",
+          "before": "Advanced Perspectives on Multi-Agent Consensus for High-Stakes Fact Verification",
+          "after": "Advance"
+        }
+      ],
+      "details": {
+        "max_length": 7
+      }
+    },
+    {
+      "scenario": "stale_date",
+      "affected_count": 6,
+      "paper_ids": [
+        "10.1145/3637528.3671819",
+        "10.1145/3637528.3671818",
+        "10.1145/3637528.3671817",
+        "10.1145/3637528.3671816",
+        "10.1145/3637528.3671815",
+        "10.1145/3637528.3671814"
+      ],
+      "changes": [
+        {
+          "paper_id": "10.1145/3637528.3671819",
+          "before": "2026-06-07",
+          "after": "2025-06-07"
+        },
+        {
+          "paper_id": "10.1145/3637528.3671818",
+          "before": "2026-06-06",
+          "after": "2025-06-06"
+        },
+        {
+          "paper_id": "10.1145/3637528.3671817",
+          "before": "2026-06-05",
+          "after": "2025-06-05"
+        },
+        {
+          "paper_id": "10.1145/3637528.3671816",
+          "before": "2026-06-04",
+          "after": "2025-06-04"
+        },
+        {
+          "paper_id": "10.1145/3637528.3671815",
+          "before": "2026-06-03",
+          "after": "2025-06-03"
+        },
+        {
+          "paper_id": "10.1145/3637528.3671814",
+          "before": "2026-06-02",
+          "after": "2025-06-02"
+        }
+      ],
+      "details": {
+        "days_shifted": 365
+      }
+    },
+    {
+      "scenario": "duplicate_rows",
+      "affected_count": 2,
+      "paper_ids": [
+        "10.1145/3637528.3671803",
+        "10.1145/3637528.3671805"
+      ],
+      "changes": [
+        {
+          "paper_id": "10.1145/3637528.3671803",
+          "before": "one row",
+          "after": "two rows"
+        },
+        {
+          "paper_id": "10.1145/3637528.3671805",
+          "before": "one row",
+          "after": "two rows"
+        }
+      ],
+      "details": {
+        "copies_per_row": 1
+      }
+    }
+  ]
+}
